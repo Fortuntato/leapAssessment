@@ -11,11 +11,10 @@ public sealed class ProductService : IProductService
     public ProductService(AppDbContext db) => _db = db;
 
     /// <summary>
-    /// Searches products using the specified query filters, sorting, and pagination, and returns a page of product results.
+    /// Search product using the specified query filters, sorting, and pagination, and returns a page of product results.
     /// </summary>
     /// <remarks>Page numbers less than 1 are treated as 1. The page size is normalized. If no products match
-    /// or the requested page is beyond the last page, the result contains an empty item collection with the total
-    /// count.</remarks>
+    /// or the requested page is beyond the last page, the result contains an empty item collection with the total count.</remarks>
     /// <param name="query">Filtering, sorting, and pagination criteria for the search.</param>
     /// <param name="ct">Cancellation token used to cancel the asynchronous operation.</param>
     /// <returns>A paged result containing product items for the requested page and the total number of matching products.</returns>
@@ -27,9 +26,9 @@ public sealed class ProductService : IProductService
         var pageSize = NormalizePageSize(query.PageSize);
         var filtered = ApplyFilters(_db.Products.AsNoTracking(), query);
         var total = await filtered.CountAsync(ct);
+        var skip = (long)(page - 1) * pageSize;
 
         // No data to return
-        var skip = (long)(page - 1) * pageSize;
         if (skip >= total)
             return new Paged<ProductDto>(Array.Empty<ProductDto>(), total, page, pageSize);
 

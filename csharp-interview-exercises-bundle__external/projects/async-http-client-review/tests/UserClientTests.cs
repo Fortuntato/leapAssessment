@@ -56,7 +56,7 @@ public class UserClientTests
     {
         var handler = new FakeHandler((req, ct) => new HttpResponseMessage(HttpStatusCode.InternalServerError)
         {
-            Content = new StringContent("{'error':'boom'}")
+            Content = new StringContent("{'error':'leap was too big'}")
         });
 
         var http = new HttpClient(handler) { BaseAddress = new Uri("https://api.test/") };
