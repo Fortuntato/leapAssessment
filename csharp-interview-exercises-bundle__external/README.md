@@ -22,7 +22,7 @@ Implementation of `ITransferService.TransferAsync`, which moves money between tw
 2. **Atomicity is best effort.** `IAccountStore` saves each account in a separate call. If writing back the source balance also fails, or the process crashes between the debit and the credit, the balances end up wrong.
 3. **A repeat with different details is silently ignored** (see assumption 4).
 4. **A repeat after an account is deleted** throws `AccountNotFoundException` instead of doing nothing, because accounts are loaded before the id check.
-5. **Single process only.** Separate service instances don't share locks, so double spending would become possible.
+5. **Single process only.** Separate processes don't share the in-memory locks, so double spending would become possible without a distributed lock provider.
 6. **The lock map never shrinks.** One semaphore stays in memory for every account ever used.
 7. **Transfers on a busy account wait in line.** Every transfer touching the same account waits its turn.
 8. **No currency or account-status checks** (frozen or closed accounts). `Account` has no fields for them.
