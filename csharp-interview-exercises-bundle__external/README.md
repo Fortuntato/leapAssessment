@@ -63,3 +63,18 @@ Implementation of `ITransferService.TransferAsync`, which moves money between tw
 
 - `Retry-After` given as a date is ignored, and a server-provided delay is not capped.
 - Retries are not logged.
+
+# Exercise 3 — Product Search with LINQ and Paging
+
+## How the query avoids loading too much data into memory
+
+`ProductService.SearchAsync` builds a single `IQueryable<Product>` and lets the database do the work. Nothing is materialized until the final `ToListAsync`.
+
+- **Filtering in SQL:** the search term and category are `Where` clauses on the `IQueryable`. They translate to a SQL `WHERE`, so unmatched rows never leave the database.
+- **Sorting in SQL:** `OrderBy`/`OrderByDescending` (with `Id` as a tie-breaker) become `ORDER BY`. No sorting happens in application memory.
+- **Paging in SQL:** `Skip`/`Take` become `OFFSET`/`FETCH`. Only one page is read, and `PageSize` is capped at 100 no matter what the caller asks for.
+- **Projection to `ProductDto`:** `Select` runs before `ToListAsync`, so only `Id`, `Sku`, `Name` and `Price` are selected. `Category` and `CreatedUtc` aren't fetched.
+- **No change tracking:** `AsNoTracking()` stops EF from building tracking entries for read-only results.
+- **Cheap total count:** `CountAsync` runs on the filtered query and returns one integer. If the total is 0, or the requested page is past the end, the page query is skipped.
+
+Result: at most 100 small DTOs are held in memory per request, whatever the table size.
