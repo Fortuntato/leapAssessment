@@ -74,7 +74,7 @@ public sealed class ProductService : IProductService
     /// <param name="products">The product query to sort.</param>
     /// <param name="sortBy">The sort key. Supported values are "price" and "name"; null, empty, or unrecognized values use creation time.</param>
     /// <param name="desc">true to sort in descending order; otherwise ascending order.</param>
-    /// <returns>An <see cref="IQueryable{T}"/> of <see cref="Product"/> ordered by the search string and then by ID.</returns>
+    /// <returns>An <see cref="IQueryable{T}"/> of <see cref="Product"/> ordered by the selected sort key and then by ID.</returns>
     private static IQueryable<Product> ApplySort(IQueryable<Product> products, string? sortBy, bool desc)
     {
         var key = sortBy?.Trim().ToLowerInvariant();
