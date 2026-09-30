@@ -26,3 +26,40 @@ Implementation of `ITransferService.TransferAsync`, which moves money between tw
 6. **The lock map never shrinks.** One semaphore stays in memory for every account ever used.
 7. **Transfers on a busy account wait in line.** Every transfer touching the same account waits its turn.
 8. **No currency or account-status checks** (frozen or closed accounts). `Account` has no fields for them.
+
+
+# Exercise 2 — Async HTTP Client Review
+
+# Async HTTP Client Review – `UserClient`
+
+## Problems identified in the original code
+
+1. **Blocking calls (`.Result`)**
+   `SendAsync(...).Result` and `ReadAsStringAsync().Result` wait synchronously on async work. This can deadlock where a synchronization context exists (UI apps, classic ASP.NET) and wastes thread-pool threads under load.
+   `return await Task.FromResult(name);` added nothing and hid the fact that the method was really synchronous.
+
+2. **Cancellation token ignored**
+   `GetUserName` accepted a `CancellationToken` but never passed it on, so callers could not cancel a request.
+
+3. **No difference between "not found" and real errors**
+   Every non-success status, including `404 Not Found`, threw an exception. A missing user is a normal outcome, not a failure.
+
+4. **Exception had no status code**
+   `HttpRequestException` was created without `StatusCode`, so callers had to parse the message text to find out what went wrong.
+
+5. **Wrong JSON parsing**
+   `JsonDocument.Parse(json).RootElement.GetString()` assumes the body is a JSON string. The API returns an object (`{"id":1,"name":"..."}`), so this throws `InvalidOperationException`.
+
+6. **Resources not disposed**
+   `HttpRequestMessage`, `HttpResponseMessage` and `JsonDocument` (which uses pooled buffers) were never disposed.
+
+7. **Silent `new HttpClient()` fallback**
+   `_http = http ?? new HttpClient();` hides configuration mistakes, ignores the configured `BaseAddress` (so the relative URL fails), and creating clients this way can exhaust sockets.
+
+8. **No resilience**
+   A single temporary failure (network error, `503`, slow server) failed the whole call, and there was no timeout of its own.
+
+## Known limitations
+
+- `Retry-After` given as a date is ignored, and a server-provided delay is not capped.
+- Retries are not logged.
